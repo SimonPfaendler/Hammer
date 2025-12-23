@@ -1,4 +1,4 @@
-#Hammer the Needle
+# Hammer the Needle
 Simple game similiar to Whack-a-Mole games
 
 - Play around with pygame
