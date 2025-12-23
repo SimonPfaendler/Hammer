@@ -1,6 +1,7 @@
-Hammer a Needle
+#Hammer the Needle
+Simple game similiar to Whack-a-Mole games
 
-- Simple game similiar to Whack-a-Mole games just for fun
+- Play around with pygame
 - Particles
 - Screenshake
 
