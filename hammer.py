@@ -301,6 +301,11 @@ def main():
     small_font = pygame.font.Font(None, 24)
     big_font = pygame.font.Font(None, 72)
     
+    # Screenshake setup
+    display_surface = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT))
+    shake_timer = 0
+    shake_offset = (0, 0)
+    
     while running:
         mouse_x, mouse_y = pygame.mouse.get_pos()
         
@@ -361,6 +366,7 @@ def main():
                  # So we just apply the hit.
                  if active_needle.hammer():
                     score += 1
+                    shake_timer = 15 # Shake for 15 frames
                     # Spawn particles
                     for _ in range(15):
                         particles.append(Particle(active_needle.x, active_needle.y))
@@ -387,8 +393,14 @@ def main():
             if p.life <= 0:
                 particles.remove(p)
         
-        # Draw
-        screen.fill(BG_COLOR)
+        if shake_timer > 0:
+            shake_timer -= 1
+            shake_offset = (random.randint(-5, 5), random.randint(-5, 5))
+        else:
+            shake_offset = (0, 0)
+        
+        # Draw to display_surface instead of screen
+        display_surface.fill(BG_COLOR)
         
         # Draw wood block
         if wood_block_image:
@@ -404,53 +416,57 @@ def main():
             scaled_block = pygame.transform.scale(rotated_img, (scaled_width, scaled_height))
             block_center_x = block_x + block_width // 2
             block_center_y = block_y + block_height // 2
-            screen.blit(scaled_block, (block_center_x - scaled_width // 2, block_center_y - scaled_height // 2))
+            display_surface.blit(scaled_block, (block_center_x - scaled_width // 2, block_center_y - scaled_height // 2))
         else:
-            pygame.draw.rect(screen, BROWN, (block_x, block_y, block_width, block_height))
+            pygame.draw.rect(display_surface, BROWN, (block_x, block_y, block_width, block_height))
             for i in range(6):
                 x = block_x + 25 + i * 30
-                pygame.draw.line(screen, DARK_BROWN, (x, block_y + 10), (x, block_y + block_height - 10), 2)
-            pygame.draw.rect(screen, LIGHT_BROWN, (block_x, block_y, 15, block_height))
-            pygame.draw.rect(screen, LIGHT_BROWN, (block_x + block_width - 15, block_y, 15, block_height))
+                pygame.draw.line(display_surface, DARK_BROWN, (x, block_y + 10), (x, block_y + block_height - 10), 2)
+            pygame.draw.rect(display_surface, LIGHT_BROWN, (block_x, block_y, 15, block_height))
+            pygame.draw.rect(display_surface, LIGHT_BROWN, (block_x + block_width - 15, block_y, 15, block_height))
         
         # Draw needles
         for needle in needles:
-            needle.draw(screen)
+            needle.draw(display_surface)
             
         # Draw particles
         for p in particles:
-            p.draw(screen)
+            p.draw(display_surface)
         
         # UI
         if not game_over:
             instruction = font.render("Click on the needle!", True, TEXT_COLOR)
-            screen.blit(instruction, (SCREEN_WIDTH // 2 - instruction.get_width() // 2, 30))
+            display_surface.blit(instruction, (SCREEN_WIDTH // 2 - instruction.get_width() // 2, 30))
             score_text = small_font.render(f"Score: {score}", True, TEXT_COLOR)
-            screen.blit(score_text, (10, 10))
+            display_surface.blit(score_text, (10, 10))
             
             # Draw Timer
             timer_color = TEXT_COLOR
             if seconds_left <= 5:
                 timer_color = (200, 50, 50) # Red warning
             timer_text = font.render(f"Time: {int(seconds_left)}", True, timer_color)
-            screen.blit(timer_text, (SCREEN_WIDTH - 120, 10))
+            display_surface.blit(timer_text, (SCREEN_WIDTH - 120, 10))
         else:
             # Game Over Screen
             overlay = pygame.Surface((SCREEN_WIDTH, SCREEN_HEIGHT), pygame.SRCALPHA)
             overlay.fill((0, 0, 0, 128))
-            screen.blit(overlay, (0, 0))
+            display_surface.blit(overlay, (0, 0))
             
             go_text = big_font.render("GAME OVER", True, (255, 100, 100))
-            screen.blit(go_text, (SCREEN_WIDTH // 2 - go_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
+            display_surface.blit(go_text, (SCREEN_WIDTH // 2 - go_text.get_width() // 2, SCREEN_HEIGHT // 2 - 50))
             
             final_score = font.render(f"Final Score: {score}", True, (255, 255, 255))
-            screen.blit(final_score, (SCREEN_WIDTH // 2 - final_score.get_width() // 2, SCREEN_HEIGHT // 2 + 20))
+            display_surface.blit(final_score, (SCREEN_WIDTH // 2 - final_score.get_width() // 2, SCREEN_HEIGHT // 2 + 20))
             
             retry_text = font.render("Click to Try Again", True, (200, 200, 200))
-            screen.blit(retry_text, (SCREEN_WIDTH // 2 - retry_text.get_width() // 2, SCREEN_HEIGHT // 2 + 70))
+            display_surface.blit(retry_text, (SCREEN_WIDTH // 2 - retry_text.get_width() // 2, SCREEN_HEIGHT // 2 + 70))
 
         # Draw hammer
-        hammer.draw(screen, mouse_x, mouse_y)
+        hammer.draw(display_surface, mouse_x, mouse_y)
+        
+        # Final blit to screen with shake
+        screen.fill(BG_COLOR) # Clear screen (or fill with black/bg)
+        screen.blit(display_surface, shake_offset)
         
         pygame.display.update()
         clock.tick(60)
